@@ -1,10 +1,13 @@
 package ru.chrshnv.lunar.usecase.interfaces.impl;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Component;
 
 import ru.chrshnv.lunar.entity.interfaces.user.User;
 import ru.chrshnv.lunar.entity.interfaces.user.UserFactory;
 import ru.chrshnv.lunar.usecase.interfaces.UserInteractor;
+import ru.chrshnv.lunar.usecase.interfaces.UserJwtEncoder;
 import ru.chrshnv.lunar.usecase.interfaces.UserPresenter;
 import ru.chrshnv.lunar.usecase.interfaces.UserSaveGateway;
 import ru.chrshnv.lunar.usecase.models.UserRequestModel;
@@ -16,11 +19,13 @@ public class CommonUserInteractor implements UserInteractor {
     private final UserFactory userFactory;
     private final UserSaveGateway userRepository;
     private final UserPresenter userPresenter;
+    private final UserJwtEncoder jwtEncoder;
 
-    public CommonUserInteractor(UserFactory userFactory, UserSaveGateway userRepository, UserPresenter userPresenter) {
+    public CommonUserInteractor(UserFactory userFactory, UserSaveGateway userRepository, UserPresenter userPresenter, UserJwtEncoder jwtEncoder) {
         this.userFactory = userFactory;
         this.userRepository = userRepository;
         this.userPresenter = userPresenter;
+        this.jwtEncoder = jwtEncoder;
     }
 
     @Override
@@ -32,10 +37,13 @@ public class CommonUserInteractor implements UserInteractor {
         if (!user.emailIsValid() || !user.passwordIsValid())
             return userPresenter.prepareFailView("Invalid email or password");
 
+        String token = jwtEncoder.encode(user.buildClaims());
+
         UserDsModel requestBody = new UserDsModel(user.getId(), user.getUsername(), user.getPassword(), user.getEmail(), user.getUserGroups());
         UserDsModel responseBody = userRepository.save(requestBody);
         
-        UserResponseModel responseModel = new UserResponseModel(responseBody.getId(), responseBody.getUsername(), responseBody.getEmail(), responseBody.getUserGroups());
+        // TODO: Implement database stored refresh tokens
+        UserResponseModel responseModel = new UserResponseModel(responseBody.getId(), responseBody.getUsername(), responseBody.getEmail(), responseBody.getUserGroups(), token, UUID.randomUUID());
         return userPresenter.prepareSuccessView(responseModel);
     }
 }

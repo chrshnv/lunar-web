@@ -1,10 +1,14 @@
 package ru.chrshnv.lunar.entity.models;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 
 import ru.chrshnv.lunar.common.enums.UserGroup;
 import ru.chrshnv.lunar.entity.interfaces.user.User;
@@ -47,6 +51,17 @@ public class CommonUser implements User {
     public boolean emailIsValid() {
         String pattern = "[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?";
         return email != null && Pattern.compile(pattern).matcher(email).matches();
+    }
+
+    @Override
+    public JwtClaimsSet buildClaims() {
+        Instant now = Instant.now();
+        return JwtClaimsSet.builder()
+            .issuer("self")
+            .issuedAt(now)
+            .expiresAt(now.plus(1, ChronoUnit.HOURS))
+            .subject(username)
+            .build();
     }
 
     @Override
